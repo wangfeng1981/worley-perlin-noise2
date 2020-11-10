@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 	int height = 256;
 	int depth = 256;
 	int gridSize = 32;
-	char outfile[512] = "outfile";
+	char outfile[512] = "layeredworley_grid13";
 	int randseed = 0;
 	int invert = 1;
 	//if (argc == 7 || argc==8 )
@@ -234,110 +234,22 @@ int main(int argc, char* argv[])
 	//	return 11;
 	//}
 
-	cout << "width height depth :" << width << " " << height << " " << depth << endl;
-	cout << "gridsize:" << gridSize << endl;
-	cout << "outfile:" << outfile << endl;
-	cout << "rand seed:" << randseed << endl;
+	vector<float> worley_grid32 ;
+	worley(width,height,depth,256/20,randseed+100,worley_grid32) ;
 
-	srand(randseed);
+	vector<float> worley_grid16 ;
+	worley(width,height,depth,256/40,randseed+200,worley_grid16) ;
 
-	int xGridnum = width / gridSize  ;
-	int yGridnum = height / gridSize  ;
-	int zGridnum = depth / gridSize   ;
+	vector<float> worley_grid8 ;
+	worley(width,height,depth,256/40,randseed+300,worley_grid8) ;
 
-	int * buffer = new int[width*height*depth];
-
-	cout << "gridnum:" << xGridnum << " " << yGridnum << " " << zGridnum << endl;
-
-	int* dxArr = new int[xGridnum*yGridnum*zGridnum];
-	int* dyArr = new int[xGridnum*yGridnum*zGridnum];
-	int* dzArr = new int[xGridnum*yGridnum*zGridnum];
-
-	cout << "begin random seeding." << endl;
-
-	int itgrid = 0;
-	for (int izg = 0; izg < zGridnum; ++izg)
-	{
-		for (int iyg = 0; iyg < yGridnum; ++iyg)
-		{
-			for (int ixg = 0; ixg < xGridnum; ++ixg)
-			{
-				float rx = wrandom();
-				float ry = wrandom();
-				float rz = wrandom();
-
-				int rdx = rx * gridSize;
-				int rdy = ry*gridSize;
-				int rdz = rz*gridSize;
-
-				int xcoor =   rdx;
-				int ycoor =  rdy;
-				int zcoor =   rdz;
-
-				dxArr[itgrid] = xcoor;
-				dyArr[itgrid] = ycoor;
-				dzArr[itgrid] = zcoor;
-				itgrid++;
-			}
-		}
-	}
-
-
-	cout << "seed is ok. begin fill buffer ..." << endl;
-	int theMaxValue = 0;
-	int theMinValue = 99999;
-	int it = 0;
-	for (int iz = 0; iz < depth; ++iz)
-	{
-		for (int iy = 0; iy < height; ++iy)
-		{
-			for (int ix = 0; ix < width; ++ix)
-			{
-				int xg = ix / gridSize;
-				int yg = iy / gridSize;
-				int zg = iz / gridSize;
-
-				int dist2 = 99999;
-				for (int zz = zg-1; zz <= zg+1 ; ++zz)
-				{
-					for (int yy = yg - 1; yy <= yg + 1; ++yy)
-					{
-						for (int xx = xg - 1; xx <= xg + 1; ++xx)
-						{
-							int seedx = 0;
-							int seedy = 0;
-							int seedz = 0;
-							getSeedPixelCoors(xx, yy, zz, gridSize,
-								xGridnum, yGridnum, zGridnum,
-								dxArr, dyArr, dzArr,
-								seedx, seedy, seedz);
- 
-							int tdist2 = (seedx - ix)*(seedx - ix)
-								+ (seedy - iy)*(seedy - iy)
-								+ (seedz - iz)*(seedz - iz);
-							tdist2 = sqrtf(tdist2);
-							if (tdist2 < dist2)
-							{
-								dist2 = tdist2;
-
-							}
-						}
-					}
-				}
-				if (dist2 > theMaxValue) theMaxValue = dist2;
-				if (dist2 < theMinValue) theMinValue = dist2;
- 
-				buffer[iz*width*height + iy*width + ix] =  dist2 ;
-			}
-		}
-		cout << iz << " " ;
-	}
 
 	unsigned char* outbuffer = new unsigned char[width*height*depth];
 	int asize = width*height*depth;
 	for (int it = 0; it < asize; ++it)
 	{
-		outbuffer[it] = 255.0*(buffer[it] - theMinValue*1.0) / (theMaxValue - theMinValue);
+		//outbuffer[it] = 255.0*(worley_grid32[it]+worley_grid16[it]+worley_grid8[it])/3.0 ;
+		outbuffer[it] = 255.0*(worley_grid32[it]*0.5 + worley_grid16[it]*0.5 + worley_grid8[it] * 0. )/1.;
 		if (invert > 0)
 		{
 			outbuffer[it] = 255 - outbuffer[it];
@@ -371,10 +283,7 @@ int main(int argc, char* argv[])
 
 
 	delete[] outbuffer;
-	delete[] buffer;
-	delete[] dxArr;
-	delete[] dyArr;
-	delete[] dzArr;
+
 
 	return 0;
 }
