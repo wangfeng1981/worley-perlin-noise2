@@ -150,10 +150,14 @@ void worley(int width,int height,int depth,int gridSize,int randseed, vector<flo
 		{
 			for (int ix = 0; ix < width; ++ix)
 			{
-				int xg = ix / gridSize;
-				int yg = iy / gridSize;
-				int zg = iz / gridSize;
-
+				int xg = min(ix / gridSize,xGridnum-1);
+				int yg = min(iy / gridSize,yGridnum-1);
+				int zg = min(iz / gridSize,zGridnum-1);
+				//printf(" debug - ") ;
+				//if( ix==240 )
+				//{
+				//	cout<<"debug ..."<<endl;
+				//}
 				float dist2 = 99999;
 				for (int zz = zg-1; zz <= zg+1 ; ++zz)
 				{
@@ -182,8 +186,9 @@ void worley(int width,int height,int depth,int gridSize,int randseed, vector<flo
 				}
 				if (dist2 > theMaxValue) theMaxValue = dist2;
 				if (dist2 < theMinValue) theMinValue = dist2;
- 
+				//printf("debug %d %d %d ;; " , iz,iy,ix) ;
 				retdata[iz*width*height + iy*width + ix] =  dist2 ;
+				//printf(" debug + ") ;
 			}
 		}
 		if( iz % 8==0 )cout << iz << " " ;
@@ -198,6 +203,27 @@ void worley(int width,int height,int depth,int gridSize,int randseed, vector<flo
 }
 
 
+void writeHeader(string rawfile, int w , int h , int d)
+{
+	{//write hdr file
+		string hdrfile = rawfile + string(".hdr");
+		FILE* pf2 = fopen(hdrfile.c_str(), "w");
+		fprintf(pf2, "ENVI\n");
+		fprintf(pf2, "description = {\n");
+		fprintf(pf2, "worley3d }\n");
+		fprintf(pf2, "samples = %d\n",w);
+		fprintf(pf2, "lines = %d\n",h);
+		fprintf(pf2, "bands = %d\n",d);
+		fprintf(pf2, "header offset = 0\n");
+		fprintf(pf2, "file type = ENVI Standard\n");
+		fprintf(pf2, "data type = 1\n");
+		fprintf(pf2, "interleave = bsq\n");
+		fprintf(pf2, "sensor type = Unknown\n");
+		fprintf(pf2, "byte order = 0\n");
+		fprintf(pf2, "wavelength units = Unknown\n");
+		fclose(pf2);
+	}
+}
 
 
 int main(int argc, char* argv[])
@@ -207,6 +233,31 @@ int main(int argc, char* argv[])
 
 	//perlin
 	//perlin() ; // i think a scale of 4 perlin is ok.2020-11-10
+
+
+	{//perlinµþ¼Óworley
+		vector<float> perlinnoise(256*256*256) ;
+		perlin(perlinnoise) ;
+
+		vector<float> werlynoise ;
+		worley(256,256,256,16,200,werlynoise) ;
+
+		vector<unsigned char> outdata(werlynoise.size()) ;
+		for(int it =0 ; it < perlinnoise.size() ;++ it )
+		{
+			float noise1 = perlinnoise[it] ;
+			//printf("debug %8.4f , " , noise1) ;
+			outdata[it] = (perlinnoise[it]*0.90 + (1-werlynoise[it])*0.10) * 255 ;
+		}
+		string outfile1 = "perlinworly.raw" ;
+		FILE* pf11 = fopen( outfile1.c_str() , "wb" ) ;
+		fwrite(outdata.data() , 1 , outdata.size() , pf11 ) ;
+		fclose(pf11) ;
+
+		writeHeader(outfile1,256,256,256) ;
+
+	}
+	return 1 ;
 
 	int width = 256;
 	int height = 256;
@@ -234,6 +285,7 @@ int main(int argc, char* argv[])
 	//	return 11;
 	//}
 
+	//perlin µþ¼Óperlin
 	vector<float> worley_grid32 ;
 	worley(width,height,depth,256/20,randseed+100,worley_grid32) ;
 

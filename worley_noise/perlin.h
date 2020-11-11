@@ -2,7 +2,9 @@
 //
 #include <math.h>
 #include <stdio.h>
+#include <vector>
 
+using std::vector;
 
 float random(float x, float y) {
 	float dotval = x * 12.9898  + y * 78.2333 ;
@@ -120,9 +122,9 @@ float fbm3d(float ptx, float pty ,float ptz) {
 	return value;
 }
 
-int perlin()
+int perlin(vector<float>& retdata )
 {
-	char outfile[] = "perlin256";
+	//char outfile[] = "perlin256";
 
 	int xsize = 256;
 	int ysize = 256;
@@ -132,13 +134,13 @@ int perlin()
 
 	float scale = 4.f;
 
-	float* buffer = new float[256 * 256*256];
-	unsigned char* buffer1 = new unsigned char[256 * 256 * 256];
+	retdata.resize(asize) ;
+	//unsigned char* buffer1 = new unsigned char[256 * 256 * 256];
 
-	FILE* pf = fopen(outfile, "wb");
+	//FILE* pf = fopen(outfile, "wb");
 
-	float valmin = 9999.f;
-	float valmax = -9999.f;
+	float valmin = 99999.f;
+	float valmax = -99999.f;
 
 	for (int iz = 0; iz < 256; ++iz)
 	{
@@ -160,10 +162,10 @@ int perlin()
 				{
 					valmin = color1;
 				}
-				buffer[it0 + iy * 256 + ix] = color1;
+				retdata[it0 + iy * 256 + ix] = color1;
 			}
 		}
-		printf("band:%d.", iz);
+		if( iz %10==0 ) printf("band:%d.", iz);
 		//if (iz == 0) break;
 	}
 
@@ -171,18 +173,7 @@ int perlin()
 
 	for (int it = 0; it < asize; ++it)
 	{
-		unsigned char color2 = (buffer[it] - valmin) / dist * 255;
-		buffer1[it] = color2;
+		retdata[it] = (retdata[it] - valmin) / dist ;
 	}
-
-
-	fwrite(buffer1, 256 * 256 * 256, 1, pf);
-	fclose(pf);
-
-	delete[] buffer;
-	delete[] buffer1;
-
-
-
 	return 0;
 }
